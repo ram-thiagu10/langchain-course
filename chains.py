@@ -65,8 +65,7 @@ revisor = actor_prompt_template.partial(
 
 if __name__ == "__main__":
     human_message = HumanMessage(
-        content="Write about AI-Powered SOC / autonomous soc  problem domain,"
-        " list startups that do that and raised capital."
+        content="Write about llm/ai based 6+ years experienced candiadte interview preparation guide"
     )
     chain = (
         first_responder_prompt_template
@@ -76,3 +75,42 @@ if __name__ == "__main__":
 
     res = chain.invoke(input={"messages": [human_message]})
     print(res)
+
+# if __name__ == "__main__":
+#     # 1. The original question
+#     user_query = "Write about MK Stalin's success and failuers"
+    
+#     # This list acts as our Reflexion "Memory Notebook"
+#     reflexion_memory = [] 
+    
+#     # We will let the agent try 2 times to perfect its answer
+#     max_iterations = 2
+#     current_messages = [HumanMessage(content=user_query)]
+
+#     for loop in range(max_iterations):
+#         print(f"\n--- 🔄 ITERATION {loop + 1} ---")
+        
+#         if loop == 0:
+#             # First attempt uses the initial responder
+#             draft_chain = first_responder_prompt_template | llm.bind_tools(tools=[AnswerQuestion], tool_choice="AnswerQuestion") | parser_pydantic
+#             result = draft_chain.invoke(input={"messages": current_messages})
+#         else:
+#             # Revisions use the revisor and inject our "memory"
+#             # We append the past critique into the prompt context
+#             revision_chain = revisor | parser_pydantic
+#             result = revision_chain.invoke(input={"messages": current_messages})
+        
+#         # Access the parsed Pydantic object fields safely
+#         # result[0] because PydanticToolsParser returns a list of objects
+#         agent_data = result[0]
+        
+#         print(f"🤖 CURRENT ANSWER:\n{agent_data.answer}\n")
+#         print(f"🤔 SELF CRITIQUE (Missing):\n{agent_data.reflection.missing}")
+#         print(f"🤔 SELF CRITIQUE (Superfluous):\n{agent_data.reflection.superfluous}")
+        
+#         # Save the critique to our Reflexion Memory
+#         critique_summary = f"Attempt {loop+1} Critique: Missing: {agent_data.reflection.missing}. Too much: {agent_data.reflection.superfluous}"
+#         reflexion_memory.append(critique_summary)
+        
+#         # Update messages for the next loop execution so the LLM sees its past work
+#         current_messages.append(HumanMessage(content=f"Your previous output was: {agent_data.answer}. Here is your notebook of past mistakes: {reflexion_memory}"))
