@@ -1,7 +1,12 @@
-from langchain_core.prompts import ChatPromptTemplate
-from pydantic import BaseModel, Field
-from langchain_openai import ChatOpenAI
+import json
 import os
+import re
+from typing import Any
+
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnableLambda
+from langchain_openai import ChatOpenAI
+from pydantic import BaseModel, Field
 
 llm = ChatOpenAI(
     model="openrouter/free",
@@ -18,12 +23,43 @@ class GradeDocuments(BaseModel):
     )
 
 
-structured_llm_grader = llm.with_structured_output(GradeDocuments)
+def parse_grade_documents(value: Any) -> GradeDocuments:
+    """Accept either JSON-like structured output or plain yes/no text."""
+    if isinstance(value, GradeDocuments):
+        return value
+
+    if isinstance(value, dict):
+        return GradeDocuments(**value)
+
+    if hasattr(value, "content"):
+        value = value.content
+
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            raise ValueError("Empty grade response")
+
+        if text.startswith("```"):
+            text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
+            text = re.sub(r"\s*```$", "", text, flags=re.IGNORECASE).strip()
+
+        if text.startswith("{"):
+            payload = json.loads(text)
+            return GradeDocuments(**payload)
+
+        normalized = text.lower()
+        if normalized in {"yes", "no"}:
+            return GradeDocuments(binary_score=normalized)
+
+        if "safety" in normalized or "unsafe" in normalized:
+            return GradeDocuments(binary_score="no")
+
+    raise ValueError(f"Could not parse grade response: {value!r}")
 
 
 system = """You are a grader assessing relevance of a retrieved document to a user question. \n 
     If the document contains keyword(s) or semantic meaning related to the question, grade it as relevant. \n
-    Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question."""
+    Return exactly one JSON object with the schema {{"binary_score": "yes"}} or {{"binary_score": "no"}}."""
 grade_prompt = ChatPromptTemplate.from_messages(
     [
         ("system", system),
@@ -31,4 +67,4 @@ grade_prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-retrieval_grader = grade_prompt | structured_llm_grader
+retrieval_grader = grade_prompt | llm | RunnableLambda(parse_grade_documents)

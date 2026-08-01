@@ -1,8 +1,32 @@
 from dotenv import load_dotenv
 
 load_dotenv()
-from graph.chains.retrieval_grader import retrieval_grader, GradeDocuments
+from graph.chains.retrieval_grader import (
+    GradeDocuments,
+    parse_grade_documents,
+    retrieval_grader,
+)
 from ingestion import retriever
+from pprint import pprint
+
+
+from graph.chains.generation import generation_chain
+
+
+def test_parse_grade_documents_accepts_plain_text() -> None:
+    parsed = parse_grade_documents("yes")
+    assert parsed.binary_score == "yes"
+
+
+def test_parse_grade_documents_accepts_json() -> None:
+    parsed = parse_grade_documents('{"binary_score": "no"}')
+    assert parsed.binary_score == "no"
+
+
+def test_parse_grade_documents_accepts_fenced_json() -> None:
+    parsed = parse_grade_documents('```json\n{"binary_score": "yes"}\n```')
+    assert parsed.binary_score == "yes"
+
 
 def test_retrieval_grader_answer_yes() -> None:
     question = "agent memory"
@@ -23,3 +47,12 @@ def test_retrieval_grader_answer_no() -> None:
     )
 
     assert res.binary_score == "no"
+
+def test_generation_chain() -> None:
+    question = "agent memory"
+    docs = retriever.invoke(question)
+    generation = generation_chain.invoke(
+        {"question": question, "context": docs}
+    )
+    pprint("--- GENERATION CHAIN OUTPUT ---")
+    pprint(generation)

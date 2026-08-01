@@ -1,8 +1,8 @@
 from typing import Any, Dict
 
 from langchain_core.documents import Document
-# from langchain_tavily import TavilySearch
-from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_tavily import TavilySearch
+# from langchain_community.tools.tavily_search import TavilySearchResults
 import sys, os
 
 sys.path.append(
@@ -14,7 +14,7 @@ from graph.state import GraphState
 from dotenv import load_dotenv
 
 load_dotenv()
-web_search_tool = TavilySearchResults(max_results=3)
+web_search_tool = TavilySearch(max_results=3)
 
 
 def web_search(state: GraphState) -> Dict[str, Any]:
