@@ -8,7 +8,7 @@ from graph.chains.retrieval_grader import (
 )
 from ingestion import retriever
 from pprint import pprint
-
+from graph.chains.hallucination_grader import hallucination_grader, GradeHallucination
 
 from graph.chains.generation import generation_chain
 
@@ -56,3 +56,27 @@ def test_generation_chain() -> None:
     )
     pprint("--- GENERATION CHAIN OUTPUT ---")
     pprint(generation)
+
+
+def test_hallucination_grader_yes() -> None:
+    question = "agent memory"
+    docs = retriever.invoke(question)
+    generation = generation_chain.invoke(
+        {"question": question, "context": docs}
+    )
+    res: GradeHallucination = hallucination_grader.invoke(
+        {"documents": docs, "generation": generation}
+    )
+    print("--- HALLUCINATION GRADER OUTPUT ---")
+    pprint(res)
+    assert res.binary_score
+
+def test_hallucination_grader_no() -> None:
+    question = "agent memory"
+    docs = retriever.invoke(question)
+    res: GradeHallucination = hallucination_grader.invoke(
+        {"documents": docs, "generation": "pizzas are made of cheese and bread"}
+    )
+    print("--- HALLUCINATION GRADER OUTPUT ---")
+    pprint(res)
+    assert res.binary_score == "no"
