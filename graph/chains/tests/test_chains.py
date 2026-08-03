@@ -11,6 +11,7 @@ from pprint import pprint
 from graph.chains.hallucination_grader import hallucination_grader, GradeHallucination
 
 from graph.chains.generation import generation_chain
+from graph.chains.router import question_router, RouteQuery
 
 
 def test_parse_grade_documents_accepts_plain_text() -> None:
@@ -80,3 +81,18 @@ def test_hallucination_grader_no() -> None:
     print("--- HALLUCINATION GRADER OUTPUT ---")
     pprint(res)
     assert res.binary_score == "no"
+
+
+def test_route_to_vectorstore()-> None:
+    question = "agent memory"
+    res: RouteQuery = question_router.invoke({"question": question})
+    print("--- ROUTER OUTPUT ---")
+    pprint(res)
+    assert res.datasource == "vectorstore"
+
+def test_route_to_websearch()-> None:
+    question = "What is the capital of France?"
+    res: RouteQuery = question_router.invoke({"question": question})
+    print("--- ROUTER OUTPUT ---")
+    pprint(res)
+    assert res.datasource == "websearch"
