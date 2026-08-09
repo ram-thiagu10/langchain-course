@@ -31,7 +31,7 @@ async def main():
             tools = await load_mcp_tools(session)
             agent = create_agent(llm,tools)
 
-            result = await agent.ainvoke({"messages": [HumanMessage(content="What is 2 + 2?")]})
+            result = await agent.ainvoke({"messages": [HumanMessage(content="What is 24 + 22 * 3?")]})
             print("Result:", result["messages"][-1].content)
 if __name__ == "__main__":
     asyncio.run(main())
