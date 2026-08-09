@@ -3,6 +3,7 @@ import os
 
 from dotenv import load_dotenv
 from langchain.agents import create_agent
+from langchain.messages import HumanMessage
 from langchain_mcp_adapters.tools import load_mcp_tools
 from langchain_openai import ChatOpenAI
 from mcp import ClientSession, StdioServerParameters
@@ -19,12 +20,18 @@ llm = ChatOpenAI(
 
 stdio_server_params = StdioServerParameters(
     command = "python",
-    args = ["C:/Users/Ramki/Documents/udemy_courses/mcp-crash-course/mcp-crash-course/servers/weather_server.py"],
+    args = ["C:/Users/Ramki/Documents/udemy_courses/mcp-crash-course/mcp-crash-course/servers/math_server.py"],
 )
 
 async def main():
-    print("Hello from mcp-crash-course!")
+    async with stdio_client(stdio_server_params) as (read, write):
+        async with ClientSession(read_stream=read, write_stream=write) as session:
+            await session.initialize()
+            print("Session initialized")
+            tools = await load_mcp_tools(session)
+            agent = create_agent(llm,tools)
 
-
+            result = await agent.ainvoke({"messages": [HumanMessage(content="What is 2 + 2?")]})
+            print("Result:", result["messages"][-1].content)
 if __name__ == "__main__":
     asyncio.run(main())
